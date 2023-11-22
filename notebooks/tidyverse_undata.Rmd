@@ -12,11 +12,11 @@ library(tidyverse)
 read the csv file gdp
 ```{r}
 gdp_df <- read_csv('../data/gdp_per_capita.csv',col_select = c('Country or Area', Year, Value))
+
 ```
 ```{r}
-gdp_df <-gdp_df |>
+gdp_df <- gdp_df |>
   rename(Country = `Country or Area`, Year = `Year`, GDP_Per_Capita = 'Value')
-  head()
 ```
 
 Dropped the column Value_Footnotes and rename the columns
@@ -75,7 +75,11 @@ gdp_2014 |>
 ```{r}
 gdp_2014 |>
   ggplot(aes(x=GDP_Per_Capita)) +
-  geom_histogram(binwidth = 1000)
+  geom_histogram(binwidth = 1000) +
+  theme(axis.text.x = element_text(size = 12),   # Adjust X-axis label font size
+        axis.text.y = element_text(size = 12),   # Adjust Y-axis label font size
+        axis.title = element_text(size = 14))  
+
 ```
 8. Find the top 5 counties and bottom 5 countries by GDP per capita in 2014.
 
@@ -92,6 +96,24 @@ gdp_2014 %>%
   arrange(GDP_Per_Capita) |>
   head(5)
 ```
+Q(9).
+Now, return to the full dataset, gdp_df. Pivot the data for 1990 and 2018 (using the pandas
+.pivot_wider() method or another method) so that each row corresponds to a country, each column
+corresponds to a year, and the values in the table give the GDP_Per_Capita amount. Drop any rows
+that are missing values for either 1990 or 2018. Save the result to a dataframe named gdp_pivoted.
 
+
+```{r}
+gdp_df_pivoted <- gdp_df |>
+  filter(Year == 1990 | Year == 2018) |>
+  pivot_wider(names_from = Year,
+              values_from = GDP_Per_Capita)
+```
+
+
+```{r}
+gdp_pivoted <- gdp_df_pivoted|>
+              drop_na('2018', '1990')
+```
 
 
