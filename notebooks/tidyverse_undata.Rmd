@@ -36,6 +36,7 @@ A total of 31 years from the year 1990 to 2020 are reprensented in the dataset.
 gdp_df |>
   ggplot(aes(x=Year)) +
   geom_bar()
+
 ```
 4. How many countries are represented in this dataset? Which countries have the fewest observations?
 
@@ -116,4 +117,182 @@ gdp_pivoted <- gdp_df_pivoted|>
               drop_na('2018', '1990')
 ```
 
+
+10. Create a new column in `gdp_pivoted` named `Percent_Change`. This column should contain the percent change in GDP_Per_Capita from 1990 to 2018. Hint: Percent change is calculated as 100*(New Value - Old Value) / Old Value.
+
+```{r}
+gdp_pivoted <- gdp_df_pivoted |>
+  mutate(Percent_Change = 100*((`2018`-`1990`)/`1990`))
+```
+
+
+11. How many countries experienced a negative percent change in GDP per capita from 1990 to 2018?
+
+```{r}
+gdp_pivoted |> 
+  filter(Percent_Change < 0) |> 
+  count()
+```
+
+
+12. Which country had the highest % change in GDP per capita? Create a line plot showing these country's GDP per capita for all years for which you have data. Put both line charts on the same plot.
+
+```{r}
+gdp_pivoted |>
+  arrange(desc(Percent_Change)) |>
+  head(2)
+```
+
+```{r}
+gdp_df |> 
+  filter(Country %in% c('Equatorial Guinea', 'China')) |>
+  ggplot(aes(x = Year, y = GDP_Per_Capita, color = Country)) + 
+  geom_line() +
+  geom_point()
+```
+
+
+13. Read in continents.csv contained in the `data` folder into a new dataframe called `continents`. We will be using this dataframe to add a new column to our dataset.
+```{r}
+continents <- read_csv('../data/continents.csv')
+```
+
+14. Merge gdp_df and continents. Keep only the countries that appear in both data frames. Save the result back to gdp_df.
+```{r}
+
+
+gdp_df <- merge(gdp_df, continents, by = "Country")
+
+```
+
+# ```{r}
+# gdp_df <- inner_join(gdp_df, continents, 
+#            by = c("Country"))
+# ```
+
+
+
+15. Determine the number of countries per continent. Create a bar chart showing this.
+# ```{r}
+# gdp_df|>
+#   group_by(Continent) |>
+#   count(Continent) |>
+#   ggplot(aes(x=Continent))+
+#   geom_bar()
+# ```
+
+```{r}
+gdp_df |> 
+  group_by(Continent) |> 
+  distinct(Country) |> 
+  count(Continent) |> 
+  ggplot()+
+  geom_col(aes(x=reorder(Continent, -n), y=n))
+```
+
+
+16. Create a boxplot showing GDP per capita in 2018 split out by continent. What do you notice?
+```{r}
+
+```
+
+17. Read life_expectancy.csv into a tibble named life_expectancy. Do not modify the csv file in order to read this data in. 
+```{r}
+life_expectancy <- read_csv("../data/life_expectancy.csv", skip = 4)
+```
+ 
+18. Drop the Country Code, Indicator Name, and Indicator Code columns. Then use `pivot_longer` to convert your data from wide to long. That is, instead of having one row per country and multiple colums per year, we want to have multiple rows per country and a single column for year. After melting, rename the columns to `Country`, `Year`, and `Life_Expectancy`.
+```{r}
+life_expectancy <- life_expectancy |> 
+  select(-c("Country Code", "Indicator Name", "Indicator Code", `2022`, `...68`)) |> 
+  pivot_longer(cols = `1960`:`2021`) |> 
+  rename(Country = `Country Name`, Year = name, Life_Expectancy = value)
+```
+
+
+19. What was the first country with a life expectancy to exceed 80?
+```{r}
+life_expectancy |>
+  arrange(Year) |>
+  filter(Life_Expectancy>80)
+```
+
+20. Merge `gdp_df` and `life_expectancy`, keeping all countries and years that appear in both DataFrames. Save the result to a new DataFrame named `gdp_le`. If you get any errors in doing this, read them carefully and correct them. Look at the first five rows of your new data frame to confirm it merged correctly. Also, check the last five rows to make sure the data is clean and as expected.
+```{r}
+life_expectancy <- life_expectancy |> 
+  mutate(across(Year, as.integer))
+```
+
+```{r}
+gdp_le <- inner_join(gdp_df, life_expectancy)
+```
+
+
+21. Create a new DataFrame, named `gdp_le_2019` by extracting data for the year 2019 from `gdp_le`. How many countries have a life expectancy of at least 80 in 2019?
+```{r}
+gdp_le_2019 <- gdp_le |>
+  filter(Year == 2019)
+```
+
+```{r}
+gdp_le_2019 |>
+  filter(Life_Expectancy>80) |>
+  count()
+```
+
+
+22. Find the countries that had the top 3 largest GDP per capita figures for 2019. Create a plot showing the change in life expectancy over time for these three countries. This plot should be faceted so that each country is contained in its own figure.
+```{r}
+gdp_le_2019 |> 
+  arrange(desc(GDP_Per_Capita)) |> 
+  head(3)
+```
+
+```{r}
+gdp_le |> 
+  filter(Country == c("Macao SAR, China", "Luxembourg", "Singapore")) |> 
+  ggplot(aes(x = Year, y = `Life_Expectancy`)) + 
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Country)
+```
+
+23. Create a scatter plot of Life Expectancy vs GDP per Capita for the year 2019. What do you notice?
+```{r}
+gdp_le_2019|>
+  drop_na(GDP_Per_Capita, Life_Expectancy) |>
+  ggplot(aes(x=GDP_Per_Capita, y=Life_Expectancy)) +
+  geom_point(aes(color = Continent))
+```
+
+24. Find the correlation between Life Expectancy and GDP per Capita for the year 2019. What is the meaning of this number?
+```{r}
+cor(gdp_le_2019$GDP_Per_Capita, gdp_le_2019$Life_Expectancy, use = "complete.obs")
+```
+
+
+```{r}
+library(corrr)
+gdp_le_2019 |> 
+  select(Life_Expectancy, GDP_Per_Capita) |> 
+  correlate()
+```
+
+
+
+
+25. Add a column to `gdp_le_2019` and calculate the logarithm of GDP per capita. Find the correlation between the log of GDP per capita and life expectancy. How does this compare to the calculation in the previous part? Look at a scatter plot to see if the result of this calculation makes sense.
+```{r}
+gdp_le_2019 <- gdp_le_2019 |>
+  mutate(Log_GDP_Per_Capita = log(GDP_Per_Capita))
+```
+```{r}
+cor(gdp_le_2019$Log_GDP_Per_Capita, gdp_le_2019$Life_Expectancy, use = "complete.obs")
+```
+```{r}
+gdp_le_2019 |>
+  drop_na(GDP_Per_Capita, Life_Expectancy) |>
+  ggplot(aes(x=Log_GDP_Per_Capita, y= Life_Expectancy)) +
+  geom_point(aes(color=Continent))
+```
 
